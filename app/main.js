@@ -10,8 +10,15 @@ const server = net.createServer((socket) => {
         const parsedData = data.toString().split('\r\n')
         const [startLine, headers] = parsedData
         const path = startLine.split(' ').filter((data) => data.startsWith('/'))[0]
+        console.log("🚀 ~ socket.on ~ path:", path)
+        const statusMethod = startLine.split(' ')[0]
+        const endpoint = path.split('/')[2]
+        if(statusMethod == 'GET' && endpoint){
+            socket.write(`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${endpoint.length}\r\n\r\n${endpoint}`)
+        }
+ 
 
-        
+
         if (path == '/') {
             socket.write('HTTP/1.1 200 OK\r\n\r\n')
         }
