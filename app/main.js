@@ -1,8 +1,13 @@
 const net = require("net");
+const { argv } = require('node:process')
+const fs = require('fs')
+const paths = require('path')
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 console.log("Logs from your program will appear here!");
 
+
+let dir
 // Uncomment this to pass the first stage
 const server = net.createServer((socket) => {
     socket.on("data", (data) => {
@@ -17,9 +22,22 @@ const server = net.createServer((socket) => {
             socket.write(`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${content.length}\r\n\r\n${content}`)
         }
 
-        const echo = path.split('/')[1]
-        if (echo == 'echo') {
+        const pathname = path.split('/')[1]
+
+        if (pathname == 'echo') {
             socket.write(`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${endpoint.length}\r\n\r\n${endpoint}`)
+        }
+
+        if (pathname == 'files') {
+            const fileName = path.split('/files/')[1]
+            const filePath = paths.join(dir, fileName)
+       
+            if (fs.existsSync(filePath)) {
+              const data =   fs.readFileSync(filePath, { encoding: 'utf-8' })
+              socket.write(`HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${data.length}\r\n\r\n${data}`)
+            }
+
+           
         }
 
         if (path == '/') {
@@ -35,5 +53,14 @@ const server = net.createServer((socket) => {
         server.close();
     });
 });
+
+
+argv.forEach((val, index) => {
+    console.log("🚀 ~ argv.forEach ~ val:", val)
+    if (val == '--directory') {
+        dir = argv[index + 1]
+    }
+
+})
 
 server.listen(4221, "localhost");
