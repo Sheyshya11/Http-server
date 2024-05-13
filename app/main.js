@@ -16,10 +16,12 @@ const server = net.createServer((socket) => {
 
 
         const path = startLine.split(' ').filter((data) => data.startsWith('/'))[0]
-        const endpoint = path.split('/')[2]
+        const status = startLine.split(' ')[0]
         const contents = parsedData.pop()
+        const endpoint = path.split('/')[2]
 
-        if (endpoint == 'GET') {
+
+        if (status == 'GET') {
             if (path == '/user-agent') {
                 const content = parsedData[2].split(' ')[1]
                 socket.write(`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${content.length}\r\n\r\n${content}`)
@@ -40,28 +42,29 @@ const server = net.createServer((socket) => {
                     socket.write(`HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${data.length}\r\n\r\n${data}`)
                 }
             }
+            if (path == '/') {
+                socket.write('HTTP/1.1 200 OK\r\n\r\n')
+            }
+            else {
+                socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
+            }
 
 
         }
-        if(endpoint == 'POST'){
+        if(status == 'POST'){
             const pathname = path.split('/')[1]
             if (pathname == 'files') {
                 const fileName = path.split('/files/')[1]
                 const filePath = paths.join(dir, fileName)
                 console.log("🚀 ~ socket.on ~ filePath:", filePath)
 
-                if (fs.existsSync(filePath)) {
-                     fs.writeFileSync(filePath, {data:contents })
-                    socket.write(`HTTP/1.1 201 OK\r\n`)
-                }
+     
+                    fs.writeFileSync(filePath, contents)
+
+                      socket.write('HTTP/1.1 201 Created\r\n\r\n')
             }
         }
-        if (path == '/') {
-            socket.write('HTTP/1.1 200 OK\r\n\r\n')
-        }
-        else {
-            socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
-        }
+ 
 
     })
     socket.on("close", () => {
