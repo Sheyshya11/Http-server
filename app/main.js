@@ -2,6 +2,7 @@ const net = require("net");
 const { argv } = require('node:process')
 const fs = require('fs')
 const paths = require('path')
+const zlib = require('zlib')
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 console.log("Logs from your program will appear here!");
@@ -32,13 +33,15 @@ const server = net.createServer((socket) => {
             }
 
             const pathname = path.split('/')[1]
+            console.log("🚀 ~ socket.on ~ pathname:", pathname)
 
             if (pathname == 'echo') {
                 const encodingsArray = !!acceptencoding && acceptencoding.split(':')[1].split(',')
-                const validEncoding = !!encodingsArray  && encodingsArray.some((data)=> data.toLowerCase().trim() == 'gzip')
- 
-                if (acceptencoding && validEncoding) {              
-                    socket.write(`HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: 4\r\n\r\n`)
+                const validEncoding = !!encodingsArray && encodingsArray.some((data) => data.toLowerCase().trim() == 'gzip')
+
+                if (acceptencoding && validEncoding) {
+                    compressZlib(endpoint, socket)
+                    // socket.write(`HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: 4\r\n\r\n`)
                 } else {
                     socket.write(`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${endpoint.length}\r\n\r\n${endpoint}`)
                 }
@@ -56,6 +59,7 @@ const server = net.createServer((socket) => {
                     socket.write(`HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${data.length}\r\n\r\n${data}`)
                 }
             }
+
             if (path == '/') {
                 socket.write('HTTP/1.1 200 OK\r\n\r\n')
             }
@@ -85,6 +89,11 @@ const server = net.createServer((socket) => {
     });
 });
 
+const compressZlib = (content, socket) => {
+    const gzipBody = zlib.gzipSync(Buffer.from(content, "utf8"));
+    socket.write(`HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: ${gzipBody.length}\r\n\r\n`);
+    socket.write(gzipBody)
+}
 
 argv.forEach((val, index) => {
     if (val == '--directory') {
