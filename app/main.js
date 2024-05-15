@@ -12,6 +12,7 @@ let dir
 const server = net.createServer((socket) => {
     socket.on("data", (data) => {
         const parsedData = data.toString().split('\r\n')
+        console.log("🚀 ~ socket.on ~ parsedData:", parsedData)
         const [startLine, headers] = parsedData
 
 
@@ -19,6 +20,9 @@ const server = net.createServer((socket) => {
         const status = startLine.split(' ')[0]
         const contents = parsedData.pop()
         const endpoint = path.split('/')[2]
+        const acceptencoding = parsedData[2].split(' ')[1]
+
+        console.log("🚀 ~ socket.on ~ acceptencoding:", acceptencoding)
 
 
         if (status == 'GET') {
@@ -30,7 +34,14 @@ const server = net.createServer((socket) => {
             const pathname = path.split('/')[1]
 
             if (pathname == 'echo') {
-                socket.write(`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${endpoint.length}\r\n\r\n${endpoint}`)
+                if (acceptencoding && acceptencoding != 'invalid-encoding') {
+                    socket.write(`HTTP/1.1 200 OK\r\nContent-Encoding: ${acceptencoding}\r\nContent-Type: text/plain\r\nContent-Length: ${acceptencoding.length}\r\n\r\n`)
+
+                } else {
+                    socket.write(`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${endpoint.length}\r\n\r\n${endpoint}`)
+                }
+
+
             }
 
             if (pathname == 'files') {
@@ -51,20 +62,18 @@ const server = net.createServer((socket) => {
 
 
         }
-        if(status == 'POST'){
+        if (status == 'POST') {
             const pathname = path.split('/')[1]
             if (pathname == 'files') {
                 const fileName = path.split('/files/')[1]
                 const filePath = paths.join(dir, fileName)
-                console.log("🚀 ~ socket.on ~ filePath:", filePath)
 
-     
-                    fs.writeFileSync(filePath, contents)
+                fs.writeFileSync(filePath, contents)
 
-                      socket.write('HTTP/1.1 201 Created\r\n\r\n')
+                socket.write('HTTP/1.1 201 Created\r\n\r\n')
             }
         }
- 
+
 
     })
     socket.on("close", () => {
@@ -75,7 +84,6 @@ const server = net.createServer((socket) => {
 
 
 argv.forEach((val, index) => {
-    console.log("🚀 ~ argv.forEach ~ val:", val)
     if (val == '--directory') {
         dir = argv[index + 1]
     }
