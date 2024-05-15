@@ -20,7 +20,7 @@ const server = net.createServer((socket) => {
         const status = startLine.split(' ')[0]
         const contents = parsedData.pop()
         const endpoint = path.split('/')[2]
-        const acceptencoding = parsedData[2].split(' ')[1]
+        const acceptencoding = parsedData[2]
 
         console.log("🚀 ~ socket.on ~ acceptencoding:", acceptencoding)
 
@@ -34,9 +34,11 @@ const server = net.createServer((socket) => {
             const pathname = path.split('/')[1]
 
             if (pathname == 'echo') {
-                if (acceptencoding && acceptencoding != 'invalid-encoding') {
-                    socket.write(`HTTP/1.1 200 OK\r\nContent-Encoding: ${acceptencoding}\r\nContent-Type: text/plain\r\nContent-Length: ${acceptencoding.length}\r\n\r\n`)
-
+                const encodingsArray = !!acceptencoding && acceptencoding.split(':')[1].split(',')
+                const validEncoding = !!encodingsArray  && encodingsArray.some((data)=> data.toLowerCase().trim() == 'gzip')
+ 
+                if (acceptencoding && validEncoding) {              
+                    socket.write(`HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: 4\r\n\r\n`)
                 } else {
                     socket.write(`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${endpoint.length}\r\n\r\n${endpoint}`)
                 }
@@ -46,6 +48,7 @@ const server = net.createServer((socket) => {
 
             if (pathname == 'files') {
                 const fileName = path.split('/files/')[1]
+                console.log("🚀 ~ socket.on ~ fileName:", fileName)
                 const filePath = paths.join(dir, fileName)
 
                 if (fs.existsSync(filePath)) {
