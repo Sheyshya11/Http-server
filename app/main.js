@@ -13,7 +13,6 @@ let dir
 const server = net.createServer((socket) => {
     socket.on("data", (data) => {
         const parsedData = data.toString().split('\r\n')
-        console.log("🚀 ~ socket.on ~ parsedData:", parsedData)
         const [startLine, headers] = parsedData
 
 
@@ -23,7 +22,7 @@ const server = net.createServer((socket) => {
         const endpoint = path.split('/')[2]
         const acceptencoding = parsedData[2]
 
-        console.log("🚀 ~ socket.on ~ acceptencoding:", acceptencoding)
+
 
 
         if (status == 'GET') {
@@ -33,8 +32,7 @@ const server = net.createServer((socket) => {
             }
 
             const pathname = path.split('/')[1]
-            console.log("🚀 ~ socket.on ~ pathname:", pathname)
-
+  
             if (pathname == 'echo') {
                 const encodingsArray = !!acceptencoding && acceptencoding.split(':')[1].split(',')
                 const validEncoding = !!encodingsArray && encodingsArray.some((data) => data.toLowerCase().trim() == 'gzip')
@@ -51,7 +49,7 @@ const server = net.createServer((socket) => {
 
             if (pathname == 'files') {
                 const fileName = path.split('/files/')[1]
-                console.log("🚀 ~ socket.on ~ fileName:", fileName)
+
                 const filePath = paths.join(dir, fileName)
 
                 if (fs.existsSync(filePath)) {
